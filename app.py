@@ -206,3 +206,40 @@ def chat_room(room_id):
     else:
         # User is not a member of the room, return a 403 Forbidden status
         return render_template("403.html")
+
+#get all the active users
+@app.route("/active_users/<int:room_id>", methods=["GET"])
+@login_required
+def get_active_users(room_id):
+    room = ChatRoom.query.get(room_id)
+    active_users = room.users
+    
+    return jsonify([{"id": user.id, "username": user.username} for user in active_users])
+
+#settings page
+@app.route("/settings",methods=['GET'])
+@login_required
+def settng_page():
+    #print(current_user.username)
+    return render_template('settings.html')
+
+#change avatar page
+@app.route("/change_avatar", methods=["POST"])
+@login_required
+def change_avatar():
+    if 'avatar' in request.files:
+        avatar = request.files['avatar']
+        if avatar.filename != '':
+            # Save the uploaded avatar to the server's file system
+            ext = avatar.filename.split(".")[-1]
+            avatar_filename = f'avatar_{current_user.username}'
+            avatar_filename+=(''.join(random.choice(string.ascii_letters + string.digits) for _ in range(6)))
+            avatar_filename += f'.{ext}'
+            avatar_path = os.path.join(app.config['AVATARS_FOLDER'], avatar_filename)
+            avatar.save(avatar_path)
+
+            # Update the user's profile_pic to the new avatar path
+            current_user.profile_pic = url_for('upload_avatar', filename=avatar_filename)
+            db.session.commit()
+
+    return redirect(url_for('settng_page'))
