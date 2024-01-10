@@ -133,7 +133,6 @@ def index():
 def chat():
     return render_template("chat.html", message='')
 
-
 # Room stuff
 @app.route("/create_room", methods=["POST"])
 @login_required
@@ -243,3 +242,39 @@ def change_avatar():
             db.session.commit()
 
     return redirect(url_for('settng_page'))
+
+@app.route("/logout", methods=["GET"])
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('login'))
+
+# SocketIO stuff
+@socketio.on('join_room')
+def handle_join_room_event(data):
+    room = data['room']
+    join_room(room)
+    socketio.emit('join_room_announcement', data, room=data['room'])
+
+@socketio.on('leave_room')
+def handle_leave_room_event(data):
+    leave_room(data['room'])
+    socketio.emit('leave_room_announcement', data, room=data['room'])
+
+@socketio.on('send_message')
+def handle_message(data):
+    room_id = data['room_id']
+    content = data['content']
+    user_id = current_user.id
+    username = current_user.username
+    profile_pic = current_user.profile_pic
+
+    # Save the message to the database
+    message = ChatMessage(content=content, room_id=room_id, user_id=user_id)
+    db.session.add(message)
+    db.session.commit()
+
+    # Emit the message to all clients in the room, including the sender
+    data = {'profile_pic':profile_pic,'user_id':user_id,'username': username, 'content': content, 'message_id': message.id}
+    socketio.emit('receive_message', data, room=room_id)
+
