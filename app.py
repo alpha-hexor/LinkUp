@@ -274,6 +274,102 @@ def handle_message(data):
     db.session.add(message)
     db.session.commit()
 
+    @socketio.on('send_file')
+def handle_file(data):
+ 
+    
+    room_id = data['room_id']
+    file_contents = data['file_contents']
+    file_extensions = data['file_extensions']
+    user_id = current_user.id
+    profile_pic = current_user.profile_pic
+    
+    for file_content, file_extension in zip(file_contents, file_extensions):
+        if len(file_content) > (32 * 1024 * 1024):
+            emit('file_error', {'message': 'File size should be less than 32 MB.'})
+            continue
+
+
+        # Save the file to the server's file system
+        name = f"{datetime.now().timestamp()}".replace(".","_")
+        file_name = f"{name}.{file_extension}"
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], file_name)
+
+        with open(file_path, 'wb') as f:
+            f.write(file_content)
+
+        # Create a file message in the database
+        message = ChatMessage(
+            content="File: " + file_name,
+            room_id=room_id,
+            user_id=user_id,
+            file_path=file_path,
+            file_name=file_name
+        )
+
+        db.session.add(message)
+        db.session.commit()
+
+        # Emit the file message to all clients in the room, including the sender
+        data = {'profile_pic':profile_pic,'user_id':user_id,'username': current_user.username, 'content': "File: " + file_name, 'file_path': url_for('uploaded_file', filename=file_name),'message_id': message.id}
+        socketio.emit('receive_message', data, room=room_id)
+
+
+
+
+@socketio.on('send_voice_message')
+def send_voice(data):
+    print("[*]Received..")
+    room_id = data['room_id']
+    voice_data = data['voice_data']
+    user_id = current_user.id
+    profile_pic = current_user.profile_pic
+
+    name = f"{datetime.now().timestamp()}".replace(".","_")
+    file_name = f"{name}.wav"
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], file_name)
+
+    with open(file_path,'wb') as f:
+        f.write(voice_data)
+
+    message = ChatMessage(
+        content="File: " + file_name,
+        room_id=room_id,
+        user_id=user_id,
+        file_path=file_path,
+        file_name=file_name
+    )
+
+    db.session.add(message)
+    db.session.commit()
+
+    data = {'profile_pic':profile_pic,'user_id':user_id,'username': current_user.username, 'content': "File: " + file_name, 'file_path': url_for('uploaded_file', filename=file_name),'message_id': message.id}
+    socketio.emit(
+        'receive_voice_message',data,room=room_id
+    )
+
+@socketio.on('delete_message')
+def handle_delete_message(data):
+    message_id = data.get('message_id')
+    room_id = data.get('room_id')
+    # print(message_id)
+    # print(room_id)
+
+    # Check if the current user has permission to delete the message
+    message = ChatMessage.query.get(message_id)
+    if message and message.user_id == current_user.id and message.room_id == room_id:
+        # Delete the message from the database
+        db.session.delete(message)
+        db.session.commit()
+
+        # Emit an event to inform all clients in the room to delete the message
+        socketio.emit('message_deleted', {'message_id': message_id, 'room_id': room_id}, room=room_id)
+
+
+if _name_ == '_main_':
+    create_db()
+    socketio.run(app, host='0.0.0.0', port=5000, debug=True)
+
     # Emit the message to all clients in the room, including the sender
     data = {'profile_pic':profile_pic,'user_id':user_id,'username': username, 'content': content, 'message_id': message.id}
     socketio.emit('receive_message', data, room=room_id)
