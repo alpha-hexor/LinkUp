@@ -127,3 +127,82 @@ def login():
 @app.route("/", methods=["GET"])
 def index():
     return redirect(url_for('login'))
+
+@app.route("/chat", methods=["GET"])
+@login_required
+def chat():
+    return render_template("chat.html", message='')
+
+
+# Room stuff
+@app.route("/create_room", methods=["POST"])
+@login_required
+def create_room():
+    room_name = request.form.get("room_name")
+
+    # Check if the room name already exists
+    existing_room = ChatRoom.query.filter_by(name=room_name).first()
+    if existing_room:
+        return render_template('chat.html', message="Error: room already exists")
+
+    new_room = ChatRoom(name=room_name)
+    db.session.add(new_room)
+    current_user.rooms.append(new_room)  # Associate the current user with the room
+    db.session.commit()
+
+    return render_template('chat.html', message="Success: room created successfully")
+
+@app.route("/join_chat_room", methods=["POST"])
+@login_required
+def join_chat_room():
+    room_name = request.form.get("room_name")
+    room = ChatRoom.query.filter_by(name=room_name).first()
+    if room:
+        current_user.rooms.append(room)  # Associate the current user with the room
+        db.session.commit()
+        return render_template('chat.html', message="Room joined successfully")
+    else:
+        return render_template('chat.html', message="Error: room doesn't exist")
+
+# Search chatroom
+@app.route("/live_search_chatroom", methods=["POST"])
+@login_required  
+def live_search_chatroom():
+    search_query = request.form.get("search_query")
+
+    if not search_query:
+        return ""
+
+    # Perform a database query to find chatrooms matching the search query
+    matching_rooms = ChatRoom.query.filter(
+        ChatRoom.name.ilike(f"%{search_query}%"),
+        ChatRoom.users.any(id=current_user.id)
+    ).all()
+
+    # Create an HTML response with list items for the search results
+    response_html = ""
+    for room in matching_rooms:
+        response_html += f'<li><a href="{url_for("chat_room", room_id=room.id)}">{room.name}</a></li>'
+
+    return response_html
+
+#404 error handling
+@app.errorhandler(404) 
+def not_found(e): 
+  
+  return render_template("404.html") 
+
+@app.route("/chat_room/<int:room_id>", methods=["GET"])
+@login_required
+def chat_room(room_id):
+    room = ChatRoom.query.get(room_id)
+
+    # Check if the current user is a member of the chat room
+    if current_user in room.users:
+        # The user has permission to access the room
+        rooms = current_user.rooms
+        previous_messages = ChatMessage.query.filter_by(room=room).all()
+        return render_template("chat_window.html", room=room, previous_messages=previous_messages, rooms=rooms)
+    else:
+        # User is not a member of the room, return a 403 Forbidden status
+        return render_template("403.html")
