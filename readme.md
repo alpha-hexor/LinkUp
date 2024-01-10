@@ -5,7 +5,7 @@
 # Table of Contents
 - [Description](#Description)
 - [Demo](#Demo)  
-- [Installations](#Installations)
+- [Installations](#Installation)
 - [Features](#Features)
 - [Todo & Future Scope](#Todo--Future-Scope)
 - [Contributors](#Contributors)
