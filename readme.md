@@ -52,49 +52,47 @@ python app.py
 **Our chat application has the following features :-** 
 
 ### Authentication
-```
-We have authentication system so that a new user can create an account and log in. We store the passwords in bcrypt hash format for security. Proper error message is shown for faulty authentication attempts .
-```
+
+    We have authentication system so that a new user can create an account and log in. We store the passwords in bcrypt hash format for security. Proper error message is shown for faulty authentication attempts .
+
 
 ### Chatroom management
-```
-When logged in the user can create a new chatroom and share the names with another user or the user can join an already created chatroom.
-```
+
+    When logged in the user can create a new chatroom and share the names with another user or the user can join an already created chatroom.
+
 
 ### Chatroom Search
-```
-A chatroom search feature is provide so that users can search their already joined chatroom and can continue the chat.
-```
+
+    A chatroom search feature is provide so that users can search their already joined chatroom and can continue the chat.
+
 
 ### Synchronized Chat
-```
-We implemented synchronized chatting with the help of socketio so that sent message can be seen by all the logged in users. 
-```
+
+    We implemented synchronized chatting with the help of socketio so that sent message can be seen by all the logged in users. 
+
 
 ### Chat History
-```
-All the chats are being saved in the database constantly so if a new user logs in the chatroom or an extising user loggs in again they can easily see the previous messages.
-```
+
+    All the chats are being saved in the database constantly so if a new user logs in the chatroom or an extising user loggs in again they can easily see the previous messages.
+
 
 ### Delete Chat
-```
-Users can delete their recently sent text message. But they can't delete chat if it's long time ago.  
-```
+
+    Users can delete their recently sent text message. But they can't delete chat if it's long time ago.  
+
 
 ### File Sharing
-```
-We implemented file sharing so that users can share files with each other. Users can send files maximum size of 32 mb and also they can send 8 files in a row. 
-```
+
+    We implemented file sharing so that users can share files with each other. Users can send files maximum size of 32 mb and also they can send 8 files in a row. 
+
 
 ### Audio Message
-```
-Users can send audio messages for better communication.
-```
+
+    Users can send audio messages for better communication.
+
 
 ### Setting Profile Pic
-```
-Users can change profile pics to their liking for a better social media like experience.
-```
+    Users can change profile pics to their liking for a better social media like experience.
 
 ## Todo && Future Scope
 
