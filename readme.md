@@ -18,15 +18,19 @@
 
 ### Authentication
 
+https://github.com/alpha-hexor/LinkUp/assets/83006189/ea32ce2e-f799-4da9-b7a9-ab6b362879f9
 
 ### Chatroom Management
 
+https://github.com/alpha-hexor/LinkUp/assets/83006189/275f82a9-90df-41df-8389-1e6abe50d055
 
 ### Chat and Media Sharing
 
-
+"https://github.com/alpha-hexor/LinkUp/assets/83006189/2ffedf40-9eb7-4d13-85d4-8fe26756e7e8"
 
 ### Profile Pic Change
+
+https://github.com/alpha-hexor/LinkUp/assets/83006189/5059a835-8230-43bb-adea-0f2f5415239c">
 
 
 # Installation
