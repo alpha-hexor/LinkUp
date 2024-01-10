@@ -16,6 +16,18 @@
 
 # Demo
 
+### Authentication
+
+
+### Chatroom Management
+
+
+### Chat and Media Sharing
+
+
+
+### Profile Pic Change
+
 
 # Installation
 
@@ -99,6 +111,8 @@ python app.py
 - **We can implement webrtc so that we can use this for video and audio call**
 
 - **We can add friend request feature so that only two user can chat personally**
+
+- **Make the whole website more responsive for mobile users**
 
 - **Right now the codebase is not production ready so we have to make the changes to make it production ready**
 
