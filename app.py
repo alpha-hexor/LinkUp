@@ -133,6 +133,7 @@ def index():
 def chat():
     return render_template("chat.html", message='')
 
+
 # Room stuff
 @app.route("/create_room", methods=["POST"])
 @login_required
@@ -206,6 +207,7 @@ def chat_room(room_id):
         # User is not a member of the room, return a 403 Forbidden status
         return render_template("403.html")
 
+
 #get all the active users
 @app.route("/active_users/<int:room_id>", methods=["GET"])
 @login_required
@@ -274,7 +276,11 @@ def handle_message(data):
     db.session.add(message)
     db.session.commit()
 
-    @socketio.on('send_file')
+    # Emit the message to all clients in the room, including the sender
+    data = {'profile_pic':profile_pic,'user_id':user_id,'username': username, 'content': content, 'message_id': message.id}
+    socketio.emit('receive_message', data, room=room_id)
+
+@socketio.on('send_file')
 def handle_file(data):
  
     
@@ -366,11 +372,6 @@ def handle_delete_message(data):
         socketio.emit('message_deleted', {'message_id': message_id, 'room_id': room_id}, room=room_id)
 
 
-if _name_ == '_main_':
+if __name__ == '__main__':
     create_db()
     socketio.run(app, host='0.0.0.0', port=5000, debug=True)
-
-    # Emit the message to all clients in the room, including the sender
-    data = {'profile_pic':profile_pic,'user_id':user_id,'username': username, 'content': content, 'message_id': message.id}
-    socketio.emit('receive_message', data, room=room_id)
-
