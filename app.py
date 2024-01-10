@@ -32,3 +32,46 @@ app.static_folder = 'static'
 login_manager = LoginManager()
 login_manager.init_app(app)
 
+# Define the User model
+class ChatMessage(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    content = db.Column(db.String(500))
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    room_id = db.Column(db.Integer, db.ForeignKey('chat_room.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    user = db.relationship('User', backref='messages')
+    file_path = db.Column(db.String(200))  # Path to the uploaded file
+    file_name = db.Column(db.String(100))  # Original file name
+
+class ChatRoom(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(80), unique=True, nullable=False)
+    messages = db.relationship('ChatMessage', backref='room')
+
+user_rooms = db.Table('user_rooms',
+    db.Column('user_id', db.Integer, db.ForeignKey('user.id')),
+    db.Column('room_id', db.Integer, db.ForeignKey('chat_room.id'))
+)
+
+class User(UserMixin, db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password = db.Column(db.String(256), nullable=False)
+    rooms = db.relationship('ChatRoom', secondary=user_rooms, backref='users')
+    profile_pic = db.Column(db.String(255))
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+
+# Create the database tables (only required once)
+def create_db():
+    with app.app_context():
+        db.create_all()
+
+# Define a route for serving uploaded files
+@app.route('/avatars/<filename>')
+def upload_avatar(filename):
+    return send_from_directory(app.config['AVATARS_FOLDER'],filename)
+
