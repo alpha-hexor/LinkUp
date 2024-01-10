@@ -1,0 +1,556 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div id="room-data" data-room-id="{{ room.id }}"></div>
+<div class="d-flex justify-content-between">
+    <ul class="nav">
+        <li class="nav-item">
+            <button class="btn btn-primary" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasScrolling" aria-controls="offcanvasScrolling">
+                <img src="{{ url_for('static', filename='images/menu.png') }}" alt="show users">
+
+            </button>
+            <div class="offcanvas offcanvas-start" data-bs-scroll="true" data-bs-backdrop="false" tabindex="-1" id="offcanvasScrolling" aria-labelledby="offcanvasScrollingLabel">
+                <div class="offcanvas-header">
+                  <h5 class="offcanvas-title" id="offcanvasScrollingLabel">List of Users</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                </div>
+                <div class="offcanvas-body" id="usersList">
+                  <!-- User list will be dynamically added here -->
+                </div>
+            </div>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link active" aria-current="page">Room: {{ room.name }}</a>
+        </li>
+    </ul>
+
+    
+</div>
+
+<div class="chat-container">
+    <div class="chat-messages">
+        <!-- Display previous messages -->
+        {% for message in previous_messages %}
+        <div class="message-card">
+            <div class="message" data-message-id="{{ message.id }}">
+                {% if message.file_path %}
+                    <!-- Display the file link if it's a file message -->
+                    <img src="{{message.user.profile_pic}}" class="profile-pic" style="width: 30px; height: 30px; border-radius: 50%; object-fit: cover;"> {{ message.user.username }}: <br>
+
+                    <!-- {{ message.user.username }}<br><a href="{{ url_for('uploaded_file', filename=message.file_name) }}" target="_blank">{{ message.content }}</a> -->
+                    {% set ext = message.file_name.split('.')[-1] %}
+                    {% if ext in ['jpg', 'png', 'jpeg', 'bmp'] %}
+                        <br><img src="{{ url_for('uploaded_file', filename=message.file_name) }}" style="max-width: 300px;max-height: 300px">
+                        
+                    {% elif ext in ['mp4', 'webm', 'ogg'] %}
+                        <br><video controls width="400" height="300">
+                            <source src="{{ url_for('uploaded_file', filename=message.file_name) }}">
+
+                        </video>
+                    {% elif ext in ['mp3', 'wav', 'flac'] %}
+                        <br><audio controls>
+                            <source src="{{ url_for('uploaded_file', filename=message.file_name) }}">
+                        </audio>    
+                    {% else %}
+                        <a href="{{ url_for('uploaded_file', filename=message.file_name) }}" target="_blank">{{ message.content }}</a>
+                        
+                    {% endif %}
+                {% else %}
+                    <!-- Display the text message -->
+                    
+                    <img src="{{message.user.profile_pic}}" class="profile-pic" style="width: 30px; height: 30px; border-radius: 60%; object-fit: cover;"> {{ message.user.username }}: {{ message.content }}
+                    
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <div class="msg-input">
+        <div class="attachment">
+            <button id="file-button" class="attachment-button" onmouseover="showTooltip()" onmouseout="hideTooltip()">
+                <img src="{{ url_for('static', filename='images/file_button.png') }}" alt="Attach File">
+            </button>
+            <input type="file" id="file-input" style="display: none;" multiple>
+            <p id="file-limit-message" style="color: red;"></p>
+            <div id="attachment-tooltip" class="tooltip">
+                <p>You can select up to 8 files (total size up to 32 MB).</p>
+            </div>
+
+        </div>
+
+        <input type="text" id="message-input" placeholder="Type your message...">
+        <div class="mic">
+            <button id="voice-recorder">
+                <img src="{{ url_for('static', filename='images/voice.png') }}" alt="Voice Message">
+            </button>
+        </div>
+        <button id="send-button">Send</button>
+    </div>
+</div>
+<div id="profileModal" class="modal">
+    <span class="close" onclick="closeProfileModal()">&times;</span>
+    <img class="modal-content" id="profileModalImg">
+</div>
+<div id="context-menu" style="display: none; position: absolute; background-color: #f9f9f9; border: 1px solid #ccc; box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);">
+    <ul style="list-style: none; padding: 0; margin: 0;">
+        <li id="context-menu-delete" style="padding: 8px 16px; cursor: pointer;">Delete</li>
+    </ul>
+</div>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+<!-- <script src="{{ url_for('static', filename='js/chat.js') }}"></script>  -->
+
+
+<script>
+
+    const room_id = {{room.id}};
+    const user_id = {{current_user.id}};
+    const socket = io.connect();
+    let lastMessageId = 0;
+    let mediaRecorder;
+    let audioChunks = [];
+    let isRecording = false;
+    let timer;
+    socket.on('connect', () => {
+        socket.emit('join_room', {
+            room: room_id
+        });
+    });
+    socket.on('join_room_announcement', function (data) {
+        console.log(data);
+    });
+
+    socket.on('leave_room_announcement', function (data) {
+        console.log(data);
+    });
+
+    window.onbeforeunload = function () {
+        socket.emit('leave_room', {
+            room: room_id
+        });
+    };
+
+    // Send a message
+
+    // Send a message when Enter key is pressed
+    const input = document.querySelector('#message-input');
+    input.addEventListener('keyup', function (event) {
+        if (event.key === 'Enter' && input.value.trim() !== '') {
+            document.querySelector('#send-button').click();
+        }
+    });
+
+    document.querySelector('#send-button').onclick = function () {
+        const input = document.querySelector('#message-input');
+        const content = input.value;
+        if (content) {
+            console.log('Sending message:', content); // Debug message
+            socket.emit('send_message', { room_id: room_id, content: content });
+            input.value = '';
+        }
+    };
+
+    // Handle file attachment
+    document.querySelector('#file-button').addEventListener('click', function () {
+        document.querySelector('#file-input').click();
+    });
+
+    document.querySelector('#file-input').addEventListener('change', function () {
+        const selectedFiles = this.files;
+        const totalSize = Array.from(selectedFiles).reduce((acc, file) => acc + file.size, 0);
+        const fileLimitMessage = document.querySelector('#file-limit-message');
+
+        if (selectedFiles.length > 8) {
+            fileLimitMessage.textContent = 'You can select a maximum of 8 files.';
+            return;
+        } else if (totalSize > 32 * 1024 * 1024) {
+            fileLimitMessage.textContent = 'Total file size should be less than 32 MB.';
+            return;
+        } else {
+            fileLimitMessage.textContent = '';
+        }
+
+        // Process selected files as before
+        const fileContents = [];
+        const fileExtensions = [];
+        for (const file of selectedFiles) {
+            const reader = new FileReader();
+            reader.onload = function (event) {
+                const fileContent = new Uint8Array(event.target.result);
+                const fileExtension = file.name.split('.').pop();
+                fileContents.push(fileContent);
+                fileExtensions.push(fileExtension);
+                if (fileContents.length === selectedFiles.length) {
+                    // All files have been read, emit them to the server
+                    socket.emit('send_file', { room_id: room_id, file_contents: fileContents, file_extensions: fileExtensions });
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+    });
+    function play_notification(){
+        const audio_url = "{{ url_for('static', filename='audio/notification.mp3') }}"
+        const audio = new Audio(audio_url);
+        audio.play();
+
+    }
+    // Handle file error messages
+    socket.on('file_error', function (data) {
+        const fileLimitMessage = document.querySelector('#file-limit-message');
+        fileLimitMessage.textContent = data.message;
+    });
+
+    function showTooltip() {
+        const tooltip = document.getElementById('attachment-tooltip');
+        tooltip.style.display = 'block';
+    }
+
+    function hideTooltip() {
+        const tooltip = document.getElementById('attachment-tooltip');
+        tooltip.style.display = 'none';
+    }
+
+    socket.on('receive_message', function (data) {
+        console.log(data)
+        console.log('This is content: ', data.content);
+        // Display the received message in the chat container
+        const messageContainer = document.querySelector('.chat-messages');
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'message-card';
+        messageDiv.dataset.messageId = data.message_id;
+        const profile_tag = document.createElement('img');
+        
+        profile_tag.src = data.profile_pic;
+        profile_tag.style.width = '30px';
+        profile_tag.style.height = '30px';
+        profile_tag.style.borderRadius = '50%';
+        profile_tag.style.objectFit = 'cover';
+        profile_tag.addEventListener('click', function () {
+            // Display the modal with the clicked profile picture
+            const profileModalImg = document.getElementById('profileModalImg');
+            profileModalImg.src = profile_tag.src;
+            document.getElementById('profileModal').style.display = 'block';
+        });
+
+
+        if(data.user_id === user_id){
+            messageDiv.addEventListener('contextmenu', function (event) {
+                // Prevent the default context menu
+                event.preventDefault();
+
+                // Show the context menu at the mouse position
+                showContextMenu(event, messageDiv,data.message_id);
+            });
+        }
+
+        if (data.file_path) {
+            // Display the file link if it's a file message
+            // if image use img src
+            const senderName = document.createElement('span');
+
+            
+            senderName.textContent = data.username + ': ';
+            console.log(senderName);
+            const ext =  data.content.split('.').pop();
+            console.log('[*]Sender function extension: '+ext)
+            if(ext === 'jpg' || ext === 'png' || ext === 'jpeg' || ext === 'bmp'){
+                console.log('[*]I got called');
+                const im_tag = document.createElement('img');
+                im_tag.src = data.file_path;
+                im_tag.style.maxWidth = '300px';
+                im_tag.style.maxHeight = '300px';
+                messageDiv.appendChild(profile_tag);
+                messageDiv.appendChild(senderName);
+                messageDiv.appendChild(document.createElement('br'));
+                messageDiv.appendChild(im_tag);
+
+
+            }else if(ext === 'mp4' || ext === 'webm' || ext === 'ogg'){
+                const video_tag = document.createElement('video');
+                video_tag.src = data.file_path;
+                video_tag.controls = true;
+                video_tag.width = 400;
+                video_tag.height = 300;
+                messageDiv.appendChild(profile_tag);
+                messageDiv.appendChild(senderName);
+                messageDiv.appendChild(document.createElement('br'));
+                messageDiv.appendChild(video_tag);
+
+
+
+            }else if(ext === 'mp3' || ext === 'wav' || ext === 'flac'){
+                const audio_tag = document.createElement('audio');
+                audio_tag.src = data.file_path;
+                audio_tag.controls = true;
+                messageDiv.appendChild(profile_tag);
+                messageDiv.appendChild(senderName);
+                messageDiv.appendChild(document.createElement('br'));
+                messageDiv.appendChild(audio_tag);
+
+            }else{
+
+                const fileLink = document.createElement('a');
+                fileLink.href = data.file_path;
+                fileLink.target = '_blank';
+                fileLink.textContent = data.content;
+                
+                messageDiv.appendChild(profile_tag);
+                messageDiv.appendChild(senderName);
+                messageDiv.appendChild(document.createElement('br'));
+                messageDiv.appendChild(fileLink);
+            }
+        } else {
+            // Display the text message
+            
+            const m_tag = document.createElement('span');
+            m_tag.textContent = data.username + ': ' + data.content;
+            messageDiv.appendChild(profile_tag);
+            messageDiv.appendChild(m_tag);
+        }
+        messageContainer.appendChild(messageDiv);
+        messageContainer.scrollTop = messageContainer.scrollHeight; // Scroll to the bottom
+        play_notification();
+    });
+
+
+    //audio message stuff
+    const voiceRecordButton = document.getElementById('voice-recorder');
+    voiceRecordButton.addEventListener('mousedown', startRecording);
+    voiceRecordButton.addEventListener('mouseup', stopRecording);
+    voiceRecordButton.addEventListener('touchstart', startRecording);
+    voiceRecordButton.addEventListener('touchend', stopRecording);
+
+    function startRecording() {
+    if (!isRecording) {
+        try {
+            console.log("[*]Audio recording started");
+            navigator.mediaDevices.getUserMedia({ audio: true })
+                .then(function(stream) {
+                    mediaRecorder = new MediaRecorder(stream);
+                    mediaRecorder.ondataavailable = event => {
+                        if (event.data.size > 0) {
+                            audioChunks.push(event.data);
+                        }
+                    };
+                    mediaRecorder.onstop = () => {
+                        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                        //socket.emit('send_voice_message', { room_id: room_id, audioBlob: audioBlob });
+                        sendaudio(audioBlob);
+                        audioChunks = [];
+                    };
+                    mediaRecorder.start();
+                    isRecording = true;
+                    voiceRecordButton.textContent = 'Recording...';
+                })
+                .catch(function(error) {
+                    console.error('Error accessing the microphone:', error);
+                });
+        } catch (error) {
+            console.error('Error accessing the microphone:', error);
+        }
+    }
+}
+
+function stopRecording() {
+    if (isRecording) {
+        mediaRecorder.stop();
+        isRecording = false;
+        voiceRecordButton.innerHTML = "<img src='{{ url_for('static', filename='images/voice.png') }}' alt='Voice Message'>";
+        
+    }
+}
+
+    function sendaudio(audioBlob){
+
+        console.log("[*]Audio sender started.....");
+        const audio_reader = new FileReader();
+        audio_reader.onload = function(event){
+            const audiobuffer = event.target.result;
+            const audiodata = new Uint8Array(audiobuffer);
+            socket.emit('send_voice_message', { room_id: room_id, voice_data:audiodata});
+        };
+        audio_reader.readAsArrayBuffer(audioBlob);
+    }
+    socket.on('receive_voice_message',function(data){
+        console.log('[*]receiver is called');
+        console.log(data.file_path);
+        const profile_tag = document.createElement('img');
+        
+        profile_tag.src = data.profile_pic;
+        profile_tag.style.width = '30px';
+        profile_tag.style.height = '30px';
+        profile_tag.style.borderRadius = '50%';
+        profile_tag.style.objectFit = 'cover';
+        profile_tag.addEventListener('click', function () {
+            // Display the modal with the clicked profile picture
+            const profileModalImg = document.getElementById('profileModalImg');
+            profileModalImg.src = profile_tag.src;
+            document.getElementById('profileModal').style.display = 'block';
+        });
+        
+
+        const messageContainer = document.querySelector('.chat-messages');
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'message-card';
+        messageDiv.dataset.messageId = data.message_id;
+
+        if(data.user_id === user_id){
+            messageDiv.addEventListener('contextmenu', function (event) {
+                // Prevent the default context menu
+                event.preventDefault();
+
+                // Show the context menu at the mouse position
+                showContextMenu(event, messageDiv,data.message_id);
+            });
+        }
+        const senderName = document.createElement('span');
+        senderName.textContent = data.username + ': ';
+        const audio_tag = document.createElement('audio');
+        audio_tag.src = data.file_path;
+        audio_tag.controls = true;
+        messageDiv.appendChild(profile_tag)
+        messageDiv.appendChild(senderName);
+        messageDiv.appendChild(document.createElement('br'));
+        messageDiv.appendChild(audio_tag);
+        messageContainer.appendChild(messageDiv);
+        play_notification();
+
+
+    });
+    // JavaScript code to fetch and display the list of users
+    document.querySelector('#offcanvasScrolling').addEventListener('show.bs.offcanvas', function () {
+        fetch('/active_users/'+room_id) 
+            .then(response => response.json())
+            .then(data => {
+                console.log(data)
+                const usersList = document.querySelector('#usersList');
+                usersList.innerHTML = '';  // Clear any existing content
+
+                if (data.length > 0) {
+                    const userListContainer = document.createElement('ul');
+                    userListContainer.className = 'list-group';
+
+                    data.forEach(user => {
+                        const userItem = document.createElement('li');
+                        userItem.className = 'list-group-item';
+                        userItem.textContent = user.username;
+
+                        userListContainer.appendChild(userItem);
+                    });
+
+                    usersList.appendChild(userListContainer);
+                } else {
+                    usersList.textContent = 'No active users in this chatroom.';
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching user data:', error);
+            });
+    });
+
+    // Add an event listener for clicks on profile pictures
+    document.addEventListener('click', function (event) {
+        const target = event.target;
+
+        // Check if the clicked element is a profile picture
+        if (target.tagName === 'IMG' && target.classList.contains('profile-pic')) {
+            // Display the modal with the clicked profile picture
+            const profileModalImg = document.getElementById('profileModalImg');
+            profileModalImg.src = target.src;
+            document.getElementById('profileModal').style.display = 'block';
+        }
+    });
+
+    // Function to close the profile modal
+    function closeProfileModal() {
+        document.getElementById('profileModal').style.display = 'none';
+    }
+
+    // Close the modal if the user clicks outside of it
+    window.addEventListener('click', function (event) {
+        if (event.target === document.getElementById('profileModal')) {
+            closeProfileModal();
+        }
+    });
+    // function showContextMenu(event, messageElement,messageId) {
+    //     console.log("context menu got called");
+    //     const contextMenu = document.getElementById('context-menu');
+    //     contextMenu.style.display = 'block';
+    //     contextMenu.style.left = `${event.pageX}px`;
+    //     contextMenu.style.top = `${event.pageY}px`;
+
+    //     // Add the message ID to the context menu for identification
+    //     // const messageId = messageElement.dataset.messageId;
+    //     console.log(messageId);
+    //     contextMenu.dataset.messageId = messageId;
+
+    //     // Close the context menu if the user clicks outside of it
+    //     document.addEventListener('click', closeContextMenu);
+    // }
+    function showContextMenu(event, messageElement, messageId) {
+        const contextMenu = document.getElementById('context-menu');
+        contextMenu.style.display = 'block';
+        contextMenu.style.left = `${event.clientX}px`;
+        contextMenu.style.top = `${event.clientY}px`;
+
+        // Add the message ID to the context menu for identification
+        contextMenu.dataset.messageId = messageId;
+
+        // Close the context menu if the user clicks outside of it
+        document.addEventListener('click', closeContextMenu);
+
+        // Prevent the default context menu from showing
+        event.preventDefault();
+    }
+
+    // function closeContextMenu() {
+    //     const contextMenu = document.getElementById('context-menu');
+    //     contextMenu.style.display = 'none';
+    //     contextMenu.dataset.messageId = ''; // Clear the message ID
+    //     document.removeEventListener('click', closeContextMenu);
+    // }
+    function closeContextMenu() {
+        const contextMenu = document.getElementById('context-menu');
+        contextMenu.style.display = 'none';
+
+        // Remove the click event listener to avoid unwanted behavior
+        document.removeEventListener('click', closeContextMenu);
+    }
+
+
+    // Add a new Socket.IO event to handle message deletion
+    socket.on('message_deleted', function (data) {
+        console.log("Message delete socket got called");
+        const messageID = data.message_id;
+        console.log("message id in delete socket: " + messageID);
+        const roomID = data.room_id;
+
+        // Remove the deleted message from the UI
+        const messageDiv = document.querySelector(`.message-card[data-message-id="${messageID}"]`);
+        console.log(messageDiv);
+        if (messageDiv) {
+            messageDiv.remove();
+        }
+
+        // Close the context menu after deletion
+        closeContextMenu();
+    });
+
+    // Add a new Socket.IO event to handle the context menu
+    document.getElementById('context-menu-delete').addEventListener('click', function () {
+        console.log("delete button clicked");
+        const messageId = document.getElementById('context-menu').dataset.messageId;
+        console.log(messageId);
+        const roomID = room_id;
+
+        // Emit a message deletion event to the server
+        socket.emit('delete_message', { message_id: messageId, room_id: roomID });
+    });
+
+
+
+
+</script>
+{% endblock %}

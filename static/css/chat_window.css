@@ -1,0 +1,154 @@
+/* Style the chat container */
+.chat-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 16px;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+    overflow: hidden; /* Hide overflow for chat container */
+    width: 100%; /* Stretch to the maximum width */
+}
+/* Style the chat messages area, making it scrollable */
+.chat-messages {
+    max-height: 400px; /* Set a maximum height that works for your design */
+    flex: 1;
+    overflow-y: auto; /* Enable vertical scrolling */
+    padding: 10px;
+    border-radius: 10px;
+    background-color: #f7f7f7;
+    overflow-x: hidden; /* Hide horizontal overflow */
+    width: 100vw;
+}
+
+
+.message-card {
+    background: -webkit-linear-gradient(158deg, #474bff 0%, #bc48ff 100%);
+    background: linear-gradient(158deg, #474bff 0%, #bc48ff 100%);
+    color: #fff; /* White text color */
+    padding: 10px; /* Add padding to messages */
+    border-radius: 15px; /* Rounded corners for messages */
+    margin-bottom: 12px; /* Add space between messages */
+    width: 30%; /* Adjust the width as needed */
+    word-wrap: break-word; /* Wrap long words */
+}
+
+.message-card a{
+    color: white;
+    transition: color 0.3s;
+
+}
+.message-card a:hover {
+    color: rgb(255, 0, 242); /* Change text color on hover, e.g., blue */
+}
+
+/* Style individual chat messages */
+.message {
+    margin-bottom: 8px; /* Add space between messages */
+}
+
+/* Style the chat input area */
+.msg-input {
+    display: flex;
+    align-items: center;
+    background-color: #fff; /* Background color for input area */
+    padding: 10px; /* Add padding to the input area */
+    border-radius: 10px; /* Rounded corners for input area */
+    position: fixed; /* Fixed position at the bottom */
+    bottom: 0; /* Stick to the bottom */
+    left: 0;
+    right: 0;
+}
+
+.attachment{
+    flex: 0 0 auto;
+    margin-right: 10px;
+}
+
+/* Style the text input field */
+#message-input {
+    flex: 1; /* Expand to fill available space */
+    border: none;
+    border-radius: 20px; /* Rounded text input */
+    padding: 8px; /* Add padding to text input */
+    margin-right: 10px; /* Add space between input and button */
+}
+
+/* Style the send button */
+#send-button {
+    border: none;
+    background-color: #007BFF; /* Button color */
+    color: #fff; /* Text color */
+    border-radius: 20px; /* Rounded button */
+    padding: 8px 16px; /* Add padding to button */
+    cursor: pointer;
+    width: 80px; /* Fixed width for the send button */
+}
+
+/* Style the send button on hover */
+#send-button:hover {
+    background-color: #0056b3; /* Hover color */
+}
+
+.attachment-button:hover {
+    background-color: #007bff; /* Change background color on hover */
+    transform: scale(1.1); /* Add a slight zoom effect on hover */
+}
+.tooltip {
+    display: none;
+    position: absolute;
+    background-color: #333;
+    color: #fff;
+    padding: 5px;
+    border-radius: 5px;
+    font-size: 12px;
+}
+#upload-progress {
+    width: 100%;
+    background-color: #f2f2f2;
+    border-radius: 4px;
+    margin: 10px 0;
+}
+
+#progress-bar {
+    height: 30px;
+    width: 0;
+    background-color: #4caf50; /* Green color for progress */
+    text-align: center;
+    line-height: 30px;
+    color: white;
+    border-radius: 4px;
+}
+
+
+/* Style the modal */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgb(0,0,0);
+    background-color: rgba(0,0,0,0.9);
+}
+
+/* Style the modal content (the image) */
+.modal-content {
+    margin: auto;
+    display: block;
+    width: 80%;
+    max-width: 700px;
+}
+
+/* Style the close button */
+.close {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    font-size: 30px;
+    color: #fff;
+    cursor: pointer;
+}

@@ -1,0 +1,11 @@
+Flask
+Flask-SQLAlchemy
+Flask-Login
+Flask-SocketIO
+gunicorn
+Werkzeug
+eventlet
+Jinja2
+click
+SQLAlchemy
+Flask-Bcrypt

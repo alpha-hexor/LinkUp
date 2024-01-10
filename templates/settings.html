@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <div class="profile-container">
+    <p>
+      <h5>Welcome {{ current_user.username }} </h5>
+    </p>
+    <form action="{{ url_for('change_avatar') }}" method="post" enctype="multipart/form-data">
+      <h4>Change Avatar</h4>
+      <div class="avatar-container">
+        <img src="{{ current_user.profile_pic }}" alt="Avatar" class="avatar-img">
+        <input type="file" name="avatar" accept="image/*">
+      </div>
+      <button type="submit" id = "avatar_button">Change Avatar</button>
+    </form>
+  </div>
+{% endblock %}

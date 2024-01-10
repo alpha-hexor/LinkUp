@@ -1,0 +1,338 @@
+*{ 
+    padding: 0;
+    margin: 0;
+    list-style: none;
+    text-decoration: none;
+    box-sizing: border-box;
+    }  
+
+    body{
+      background-color: #efedf3;
+    }
+.head{
+    width: 100%;
+    height: 80px;
+    background: #f6f8fa;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 100px;
+    box-shadow: 0px 3px 8px rgba(0, 0, 0, 25%);
+}
+.navbar ul li a{
+    display: block;
+    color: rgb(0, 0, 0);
+    font-size: 20px;
+    padding: 10px 20px;
+    transition: 0.1s;
+    margin:0 5px ;
+}
+.navbar ul li a:hover{
+   border-bottom: 4px solid rgb(102, 102, 180) ;
+}
+.logo img{
+    float: left;
+    margin: 0px 15px 15px 0px;
+}   
+.logo a{
+    cursor: pointer;
+}
+span{
+    margin: 5px 5px 5px 5px;
+    padding: 5px 5px 5px 5px;
+}
+.showLeft {
+    background-color: #faf6f6 ;  
+    text-shadow: white !important;
+    color: black !important;
+    padding: 10px;
+  }
+  .icons{
+    margin-top: 8px;
+    margin-right: 5px;
+   
+  }
+
+
+  .icons li {
+    background: none repeat scroll 0 0 rgb(7, 6, 6);
+    height: 5px;
+    width: 5px;
+    line-height: 0;
+    list-style: none outside none;
+    margin-right: 15px;
+    margin-top: 3px;
+    vertical-align: top;
+    border-radius: 50%;
+    pointer-events:none;
+  }
+  .btn-left {
+    left: 0.4em;
+  }
+  .btn-right {
+    right: 0.4em;
+  }
+  .btn-left,
+  .btn-right {
+    position: absolute;
+    top: 0.24em;
+  }
+  .dropbtn {
+    background-color: #faf6f6;
+    position: fixed;
+    color: white;
+    font-size: 16px;
+    border: none;
+    cursor: pointer;
+  }
+  .dropbtn:hover,
+  .dropbtn:focus {
+    background-color: #3e8e41;
+  }
+  .dropdown {
+    position: absolute;
+    display: inline-block;
+    right: 0.4em;
+  }
+  .dropdown-content {
+    display: none;
+    position: relative;
+    margin-top: 2px;
+    background-color: #f9f9f9;
+    min-width: 160px;
+    overflow: auto;
+    box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+    z-index: 1;
+  }
+  
+  .dropdown-content a {
+    color: black;
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+  }
+  
+  .dropdown a:hover {
+    background-color: #f1f1f1;
+  }
+  
+  .show {
+    display: block;
+  }
+  .dropdown ul:hover{
+    background-color: rgb(180, 202, 202);
+    border-radius: 100px;
+    
+  }
+
+  /* middle */
+.mid{
+    display: flex;
+    justify-content: center;
+    
+}
+.meeting{
+    height: 200px;
+    width: 500px;
+    margin: 20px;
+    background-color: #bec2c4;
+    border-radius: 10px;
+    margin-top: 100px;
+
+}
+
+.button-container {
+  position: relative;
+  display: inline-block;
+}
+
+.options {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+button {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  text-align: left;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: white;
+  font-weight: 900;
+  font-size: 16px;
+}
+
+button:hover {
+  background-color: #0e034b;
+  border-radius:5px ;
+}
+  #join-btn{
+    background-color: #150558; 
+    color: white;
+    padding: 15px 32px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    width:20%;  
+    border-radius: 5px;
+    font-weight: 900;
+ }
+ .button-element{
+  color: black;
+  font-size: 14px;
+  font-weight: 200;
+  width: 245px;
+  border-bottom: 1px solid rgb(199, 183, 183);
+ }
+ .button-element:hover{
+  background-color: rgb(212, 202, 202);
+ }
+input{
+  margin: 65px 10px;
+  height: 50px;
+  width: 300px;
+  padding: 10px;
+  border-radius: 10px;
+} 
+
+
+.meeting1{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: auto;
+}
+.button-container{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 65px 100px  ;
+  width: 50%;
+  background-color: #150558;
+  color: rgb(243, 243, 243);
+  font-weight: 900;
+  border-radius: 5px;
+
+}
+.sentence{
+  margin-top: 10px;
+   margin-top: 10px;
+  padding: 28px 38px 44px 22px;
+  text-align: center;
+  color: #817f85;
+ 
+}
+.sentence p{
+  padding: 20px 300px;
+  color: #aca8b3;
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: 600;
+  border-bottom: 1px solid rgb(209, 198, 198);
+}
+
+.modal {
+  display: none; /* Hidden by default */
+  position: fixed; /* Stay in place */
+  z-index: 1; /* Sit on top */
+  left: 0;
+  top: 0;
+  width: 100%; /* Full width */
+  height: 100%; /* Full height */
+  overflow: auto; /* Enable scroll if needed */
+  background-color: rgb(0,0,0); /* Fallback color */
+  background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+}
+
+/* Modal Content/Box */
+.modal-content {
+  background-color: #fefefe;
+  margin: 15% auto; /* 15% from the top and centered */
+  padding: 20px;
+  border: 1px solid #888;
+  width: 80%; /* Could be more or less, depending on screen size */
+}
+
+/* The Close Button */
+.close {
+  color: #aaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+  color: black;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.modal {
+  display: none; /* Hidden by default */
+  position: fixed; /* Stay in place */
+  z-index: 1; /* Sit on top */
+  left: 0;
+  top: 0;
+  width: 100%; /* Full width */
+  height: 100%; /* Full height */
+  overflow: auto; /* Enable scroll if needed */
+  background-color: rgb(0,0,0); /* Fallback color */
+  background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+}
+
+/* Modal Content/Box */
+.modal-content {
+  background-color: #fefefe;
+  margin: 15% auto; /* 15% from the top and centered */
+  padding: 20px;
+  border: 1px solid #888;
+  width: 80%; /* Could be more or less, depending on screen size */
+}
+
+/* The Close Button */
+.close {
+  color: #aaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+  color: black;
+  text-decoration: none;
+  cursor: pointer;
+}
+.chat-room {
+  max-height: 300px;
+  overflow-y: scroll;
+  border: 1px solid #ccc;
+  padding: 10px;
+  border-radius: 5px;
+  background-color: #f5f5f5; /* Background color for chat room */
+}
+
+.chat-input {
+  width: 100%;
+  padding: 5px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+.send-button {
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 5px;
+  align-items: center;
+  cursor: pointer;
+}
