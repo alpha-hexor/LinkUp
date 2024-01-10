@@ -75,3 +75,55 @@ def create_db():
 def upload_avatar(filename):
     return send_from_directory(app.config['AVATARS_FOLDER'],filename)
 
+@app.route('/uploads/<filename>')
+def uploaded_file(filename):
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+
+#various routes
+@app.route("/signup", methods=["POST"])
+def signup():
+    username = request.form.get("username")
+    email = request.form.get("email")
+    password = request.form.get("password")
+
+    # Check if the username or email already exists
+    existing_user = User.query.filter_by(username=username).first()
+    if existing_user:
+        message = "Username already exists. Please choose a different username"
+        return render_template("auth.html", auth_error=message)
+
+    existing_email = User.query.filter_by(email=email).first()
+    if existing_email:
+        message = "Email already exists. Please choose a different email"
+        return render_template("auth.html", auth_error=message)
+
+    # Create a new user and save it to the database
+    hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
+    default_pic = url_for('upload_avatar',filename='default.png')
+    new_user = User(username=username, email=email, password=hashed_password,profile_pic=default_pic)
+    db.session.add(new_user)
+    db.session.commit()
+
+    return redirect(url_for('login'))
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == 'POST':
+        email = request.form.get('email')
+        password = request.form.get('password')
+        user = User.query.filter_by(email=email).first()
+
+        if not user or not bcrypt.check_password_hash(user.password, password):
+            error_message = "Invalid email or password"
+            return render_template("auth.html", auth_error=error_message)
+
+        login_user(user)
+
+        # If login is successful, then redirect to the chat
+        return redirect(url_for('chat'))
+    else:
+        return render_template('auth.html')
+
+@app.route("/", methods=["GET"])
+def index():
+    return redirect(url_for('login'))
