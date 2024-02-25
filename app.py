@@ -11,7 +11,7 @@ from flask_bcrypt import Bcrypt
 app = Flask(__name__)
 
 # Configure the database URI
-database_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'mydatabase.db')
+database_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'database', 'mydatabase.db')
 
 # Configure the database URI with the absolute path
 app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{database_path}'

@@ -1,0 +1,14 @@
+services:
+  linkup_final:
+    build: .
+    ports:
+      - "5000:5000"
+    volumes:
+      - database:/app/database
+      - avatars:/app/avatars
+      - attachments:/app/attachments
+volumes:
+  database:
+  avatars:
+  attachments:
+
