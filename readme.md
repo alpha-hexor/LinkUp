@@ -19,9 +19,9 @@ To run the appplication locally do the following
 
 * Run the following
 
-``sh
-docker compose up
-``
+```sh
+docker-compose up
+```
 
 **The interface should be availabel on http://127.0.0.1:5000/**
 
