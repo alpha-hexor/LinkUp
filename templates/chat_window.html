@@ -105,8 +105,8 @@
 
 <script>
 
-    const room_id = {{room.id}};
-    const user_id = {{current_user.id}};
+    const room_id = "{{room.id}}";
+    const user_id = "{{current_user.id}}";
     const socket = io.connect();
     let lastMessageId = 0;
     let mediaRecorder;
@@ -133,6 +133,86 @@
     };
 
     // Send a message
+    async function generateAESKey() {
+        return crypto.subtle.generateKey(
+            { name: 'AES-CBC', length: 256 },
+            true,
+            ['encrypt', 'decrypt']
+        );
+    }
+    async function encryptMessage(aesKey, iv, message) {
+        const encoder = new TextEncoder();
+        const encodedMessage = encoder.encode(message);
+        return crypto.subtle.encrypt(
+            { name: 'AES-CBC', iv: iv },
+            aesKey,
+            encodedMessage
+        );
+    }
+
+    async function decryptMessage(aesKey, iv, encryptedMessage) {
+        return crypto.subtle.decrypt(
+            { name: 'AES-CBC', iv: iv },
+            aesKey,
+            encryptedMessage
+        ).then(decrypted => {
+            const decoder = new TextDecoder();
+            return decoder.decode(decrypted);
+        });
+    }
+
+
+    async function importPublicKey(pem) {
+        const binaryDer = str2ab(atob(pem.split('\n').filter(x => x && !x.includes('----')).join('')));
+        return crypto.subtle.importKey(
+            'spki',
+            binaryDer,
+            { name: 'RSA-OAEP', hash: 'SHA-256' },
+            true,
+            ['encrypt']
+        );
+    }
+    async function importPrivateKey(pem) {
+        try {
+            const binaryDer = str2ab(atob(pem.split('\n').filter(x => x && !x.includes('----')).join('')));
+            return await crypto.subtle.importKey(
+                'pkcs8',
+                binaryDer,
+                { name: 'RSA-OAEP', hash: 'SHA-256' },
+                true,
+                ['decrypt']
+            );
+        } catch (error) {
+            console.error('Error importing private key:', error);
+            throw error; // Rethrow the error to propagate it to the caller
+        }
+    }
+    async function importAESKey(rawKey) {
+        return await window.crypto.subtle.importKey(
+            'raw',
+            rawKey,
+            'AES-CBC',
+            false,
+            ['encrypt', 'decrypt']
+        );
+    }
+    async function exportKeyToArrayBuffer(key) {
+        const exportedKey = await crypto.subtle.exportKey('raw', key);
+        return exportedKey;
+    }
+
+    function str2ab(str) {
+        const buf = new ArrayBuffer(str.length);
+        const bufView = new Uint8Array(buf);
+        for (let i = 0, strLen = str.length; i < strLen; i++) {
+            bufView[i] = str.charCodeAt(i);
+        }
+        return buf;
+    }
+    function ab2str(buf) {
+        return String.fromCharCode.apply(null, new Uint8Array(buf));
+    }
+
 
     // Send a message when Enter key is pressed
     const input = document.querySelector('#message-input');
@@ -142,12 +222,27 @@
         }
     });
 
-    document.querySelector('#send-button').onclick = function () {
+    document.querySelector('#send-button').onclick = async function () {
         const input = document.querySelector('#message-input');
         const content = input.value;
         if (content) {
-            console.log('Sending message:', content); // Debug message
-            socket.emit('send_message', { room_id: room_id, content: content });
+            // Debug message
+            // encryption stuff
+            const aesKey = await generateAESKey();
+            const aesKeyArrayBuffer = await exportKeyToArrayBuffer(aesKey);
+            const iv = crypto.getRandomValues(new Uint8Array(16));
+            const encryptedMessage = await encryptMessage(aesKey, iv, content);
+            const response = await fetch(`/public_key/${room_id}`);
+            const r = await response.json();
+            const publicKey = await importPublicKey(r['public_key']);
+            const encryptedAesKey = await crypto.subtle.encrypt({ name: 'RSA-OAEP' }, publicKey, aesKeyArrayBuffer);
+            const encryptedIv = await crypto.subtle.encrypt({ name: 'RSA-OAEP' }, publicKey, iv);
+            const encryptedKeys= {
+                encryptedAesKey: ab2str(encryptedAesKey),
+                encryptedIv: ab2str(encryptedIv)
+            };
+
+            socket.emit('send_message', { room_id: room_id, encrypted_keys: encryptedKeys,encrypted_content: ab2str(encryptedMessage), m:content });
             input.value = '';
         }
     };
@@ -212,9 +307,7 @@
         tooltip.style.display = 'none';
     }
 
-    socket.on('receive_message', function (data) {
-        console.log(data)
-        console.log('This is content: ', data.content);
+    socket.on('receive_message', async function (data) {
         // Display the received message in the chat container
         const messageContainer = document.querySelector('.chat-messages');
         const messageDiv = document.createElement('div');
@@ -303,15 +396,26 @@
             }
         } else {
             // Display the text message
+            const response = await fetch(`/private_key/${room_id}`);
+            const r = await response.json();
+
+            const encryptedKey = data.keys;
+            const encryptedAesKey = encryptedKey['encryptedAesKey'];
+            const encryptedIV =  encryptedKey['encryptedIv'];
             
+            const private_key = await importPrivateKey(r['private_key']);
+            const aesKeybuffer = await crypto.subtle.decrypt({ name: 'RSA-OAEP' }, private_key, str2ab(encryptedAesKey));
+            const iv = await crypto.subtle.decrypt({ name: 'RSA-OAEP' }, private_key, str2ab(encryptedIV));
+            const aesKey = await importAESKey(aesKeybuffer);
+            const message = await decryptMessage(aesKey, iv, str2ab(data.content));
             const m_tag = document.createElement('span');
-            m_tag.textContent = data.username + ': ' + data.content;
+            m_tag.textContent = data.username + ': ' + message;
             messageDiv.appendChild(profile_tag);
             messageDiv.appendChild(m_tag);
         }
         messageContainer.appendChild(messageDiv);
         messageContainer.scrollTop = messageContainer.scrollHeight; // Scroll to the bottom
-        play_notification();
+        //play_notification();
     });
 
 

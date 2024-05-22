@@ -7,6 +7,9 @@ from datetime import datetime
 import random
 import string
 from flask_bcrypt import Bcrypt
+from Crypto.PublicKey import RSA
+import uuid
+from Crypto.Cipher import PKCS1_OAEP
 
 app = Flask(__name__)
 
@@ -34,36 +37,42 @@ login_manager.init_app(app)
 
 # Define the User model
 class ChatMessage(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.String(80), primary_key=True)
     content = db.Column(db.String(500))
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
-    room_id = db.Column(db.Integer, db.ForeignKey('chat_room.id'))
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    room_id = db.Column(db.String(80), db.ForeignKey('chat_room.id'))
+    user_id = db.Column(db.String(80), db.ForeignKey('user.id'))
     user = db.relationship('User', backref='messages')
     file_path = db.Column(db.String(200))  # Path to the uploaded file
     file_name = db.Column(db.String(100))  # Original file name
 
+
 class ChatRoom(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.String(80), primary_key=True)
     name = db.Column(db.String(80), unique=True, nullable=False)
+    rsa_public_key = db.Column(db.Text, nullable=False)
+    rsa_private_key = db.Column(db.Text, nullable=False)
     messages = db.relationship('ChatMessage', backref='room')
 
 user_rooms = db.Table('user_rooms',
-    db.Column('user_id', db.Integer, db.ForeignKey('user.id')),
-    db.Column('room_id', db.Integer, db.ForeignKey('chat_room.id'))
+    db.Column('user_id', db.String(80), db.ForeignKey('user.id')),
+    db.Column('room_id', db.String(80), db.ForeignKey('chat_room.id'))
 )
 
 class User(UserMixin, db.Model):
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.String(80), primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(256), nullable=False)
     rooms = db.relationship('ChatRoom', secondary=user_rooms, backref='users')
     profile_pic = db.Column(db.String(255))
 
+def create_id():
+    return str(uuid.uuid4())
+
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(int(user_id))
+    return User.query.get(user_id)
 
 # Create the database tables (only required once)
 def create_db():
@@ -100,7 +109,7 @@ def signup():
     # Create a new user and save it to the database
     hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
     default_pic = url_for('upload_avatar',filename='default.png')
-    new_user = User(username=username, email=email, password=hashed_password,profile_pic=default_pic)
+    new_user = User(id = create_id(),username=username, email=email, password=hashed_password,profile_pic=default_pic)
     db.session.add(new_user)
     db.session.commit()
 
@@ -144,13 +153,34 @@ def create_room():
     existing_room = ChatRoom.query.filter_by(name=room_name).first()
     if existing_room:
         return render_template('chat.html', message="Error: room already exists")
+    
+    key = RSA.generate(2048)
+    private_key = key.export_key(format='PEM', pkcs=8).decode('utf-8')
+    public_key = key.publickey().export_key().decode('utf-8')
 
-    new_room = ChatRoom(name=room_name)
+    new_room = ChatRoom(id = create_id(),name=room_name,rsa_public_key=public_key,rsa_private_key=private_key)
     db.session.add(new_room)
     current_user.rooms.append(new_room)  # Associate the current user with the room
     db.session.commit()
 
     return render_template('chat.html', message="Success: room created successfully")
+
+@app.route("/public_key/<string:room_id>", methods=["GET"])
+@login_required
+def get_public_keys(room_id):
+    room = ChatRoom.query.get(room_id)
+    if not room:
+        return jsonify({'error': 'Room not found'}), 404
+    return jsonify({'public_key': room.rsa_public_key})
+
+@app.route("/private_key/<string:room_id>", methods=["GET"])
+@login_required
+def get_private_keys(room_id):
+    room = ChatRoom.query.get(room_id)
+    if not room:
+        return jsonify({'error': 'Room not found'}), 404
+    return jsonify({'private_key': room.rsa_private_key})
+
 
 @app.route("/join_chat_room", methods=["POST"])
 @login_required
@@ -192,7 +222,7 @@ def not_found(e):
   
   return render_template("404.html") 
 
-@app.route("/chat_room/<int:room_id>", methods=["GET"])
+@app.route("/chat_room/<string:room_id>", methods=["GET"])
 @login_required
 def chat_room(room_id):
     room = ChatRoom.query.get(room_id)
@@ -209,7 +239,7 @@ def chat_room(room_id):
 
 
 #get all the active users
-@app.route("/active_users/<int:room_id>", methods=["GET"])
+@app.route("/active_users/<string:room_id>", methods=["GET"])
 @login_required
 def get_active_users(room_id):
     room = ChatRoom.query.get(room_id)
@@ -266,18 +296,33 @@ def handle_leave_room_event(data):
 @socketio.on('send_message')
 def handle_message(data):
     room_id = data['room_id']
-    content = data['content']
+    encrypted_keys = data['encrypted_keys']
+    encrypted_content = data['encrypted_content']
     user_id = current_user.id
     username = current_user.username
     profile_pic = current_user.profile_pic
-
+    def import_private_key(pem):
+        pem_lines = pem.strip().split('\n')
+        pem_data = ''.join(pem_lines[1:-1])
+        import base64
+        binary_der = base64.b64decode(pem_data)
+        private_key = RSA.import_key(binary_der)
+        return private_key
+    private_key= import_private_key(ChatRoom.query.get(room_id).rsa_private_key)
+    print(private_key)
+    print(bytes(encrypted_keys['encryptedAesKey'],'utf-8'))
+    cipher = PKCS1_OAEP.new(private_key)
+    
+    # print(encrypted_content)
+    # print(encrypted_keys)
+    
     # Save the message to the database
-    message = ChatMessage(content=content, room_id=room_id, user_id=user_id)
+    message = ChatMessage(id=create_id(),content=data['m'], room_id=room_id, user_id=user_id)
     db.session.add(message)
     db.session.commit()
 
     # Emit the message to all clients in the room, including the sender
-    data = {'profile_pic':profile_pic,'user_id':user_id,'username': username, 'content': content, 'message_id': message.id}
+    data = {'profile_pic':profile_pic,'user_id':user_id,'username': username, 'content': encrypted_content, 'message_id': message.id,'keys':encrypted_keys}
     socketio.emit('receive_message', data, room=room_id)
 
 @socketio.on('send_file')
@@ -306,6 +351,7 @@ def handle_file(data):
 
         # Create a file message in the database
         message = ChatMessage(
+            id = create_id(),
             content="File: " + file_name,
             room_id=room_id,
             user_id=user_id,
@@ -339,6 +385,7 @@ def send_voice(data):
         f.write(voice_data)
 
     message = ChatMessage(
+        id = create_id(),
         content="File: " + file_name,
         room_id=room_id,
         user_id=user_id,
