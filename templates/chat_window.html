@@ -85,6 +85,13 @@
                 <img src="{{ url_for('static', filename='images/voice.png') }}" alt="Voice Message">
             </button>
         </div>
+        <div class="call">
+            <a href ="/video_room" target="_blank">
+                <button id="startcall">
+                    <img src="{{ url_for('static', filename= 'images/call.png') }}" alt="video calll">
+                </button>
+            </a>
+        </div>
         <button id="send-button">Send</button>
     </div>
 </div>
@@ -396,6 +403,7 @@
             }
         } else {
             // Display the text message
+            let final_message = "";
             const response = await fetch(`/private_key/${room_id}`);
             const r = await response.json();
 
@@ -409,7 +417,14 @@
             const aesKey = await importAESKey(aesKeybuffer);
             const message = await decryptMessage(aesKey, iv, str2ab(data.content));
             const m_tag = document.createElement('span');
-            m_tag.textContent = data.username + ': ' + message;
+            if (message.startsWith("https://") || message.startsWith("http://")){
+                console.log("this message is a link");
+                final_message = '<a href="'+message+'" target="_blank">'+message+'</a>';
+                console.log(message);
+            }else{
+                final_message = message;
+            }
+            m_tag.innerHTML = data.username + ': ' + final_message;
             messageDiv.appendChild(profile_tag);
             messageDiv.appendChild(m_tag);
         }
@@ -652,9 +667,5 @@ function stopRecording() {
         // Emit a message deletion event to the server
         socket.emit('delete_message', { message_id: messageId, room_id: roomID });
     });
-
-
-
-
 </script>
 {% endblock %}
