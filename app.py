@@ -53,6 +53,14 @@ class ChatRoom(db.Model):
     rsa_public_key = db.Column(db.Text, nullable=False)
     rsa_private_key = db.Column(db.Text, nullable=False)
     messages = db.relationship('ChatMessage', backref='room')
+    admin_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+
+class JoinRequest(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    room_id = db.Column(db.String(80), db.ForeignKey('chat_room.id'))
+    user = db.relationship('User', backref=db.backref('join_requests', cascade='all, delete-orphan'))
+    room = db.relationship('ChatRoom', backref=db.backref('join_requests', cascade='all, delete-orphan'))
 
 user_rooms = db.Table('user_rooms',
     db.Column('user_id', db.String(80), db.ForeignKey('user.id')),
@@ -113,7 +121,7 @@ def signup():
     db.session.add(new_user)
     db.session.commit()
 
-    return redirect(url_for('login'))
+    return redirect(url_for('verification'))
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -132,6 +140,14 @@ def login():
         return redirect(url_for('chat'))
     else:
         return render_template('auth.html')
+    
+@app.route("/verification",methods=["GET","POST"])
+def verification():
+    if request.method == "POST":
+        print("Hello world")
+        return redirect(url_for('login'))
+    else:
+        return render_template('verification.html')
 
 @app.route("/", methods=["GET"])
 def index():
@@ -158,12 +174,50 @@ def create_room():
     private_key = key.export_key(format='PEM', pkcs=8).decode('utf-8')
     public_key = key.publickey().export_key().decode('utf-8')
 
-    new_room = ChatRoom(id = create_id(),name=room_name,rsa_public_key=public_key,rsa_private_key=private_key)
+    new_room = ChatRoom(id = create_id(),name=room_name,rsa_public_key=public_key,rsa_private_key=private_key,admin_id=current_user.id)
     db.session.add(new_room)
     current_user.rooms.append(new_room)  # Associate the current user with the room
     db.session.commit()
 
     return render_template('chat.html', message="Success: room created successfully")
+
+@app.route("/request_join", methods=["POST"])
+@login_required
+def request_join():
+    room_name = request.form.get("room_name")
+    room = ChatRoom.query.filter_by(name=room_name).first()
+    if room:
+        join_request = JoinRequest(user_id=current_user.id, room_id=room.id)
+        db.session.add(join_request)
+        db.session.commit()
+        return render_template('chat.html', message="Join request sent to admin.")
+    else:
+        return render_template('chat.html', message="Error: room doesn't exist")
+    
+@app.route("/approve_join/<int:request_id>", methods=["POST"])
+@login_required
+def approve_join(request_id):
+    join_request = JoinRequest.query.get(request_id)
+    if not join_request:
+        return render_template('chat.html', message="Error: join request not found")
+    
+    room = ChatRoom.query.get(join_request.room_id)
+    if room.admin_id != current_user.id:
+        return render_template('chat.html', message="Error: you are not the admin of this room")
+    
+    # Approve the join request
+    user = User.query.get(join_request.user_id)  # Retrieve the requesting user
+    user.rooms.append(room)  # Add the requesting user to the room
+    db.session.delete(join_request)
+    db.session.commit()
+
+    return render_template('chat.html', message="User has been added to the room successfully")
+@app.route("/view_requests")
+@login_required
+def view_requests():
+    join_requests = JoinRequest.query.join(ChatRoom, ChatRoom.id == JoinRequest.room_id)\
+                                     .filter(ChatRoom.admin_id == current_user.id).all()
+    return render_template('request.html', join_requests=join_requests)
 
 @app.route("/public_key/<string:room_id>", methods=["GET"])
 @login_required
@@ -417,6 +471,7 @@ def handle_delete_message(data):
 
         # Emit an event to inform all clients in the room to delete the message
         socketio.emit('message_deleted', {'message_id': message_id, 'room_id': room_id}, room=room_id)
+
 
 
 if __name__ == '__main__':

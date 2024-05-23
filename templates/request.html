@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Join Requests</title>
+</head>
+<body>
+    <h1>Join Requests</h1>
+    {% for request in join_requests %}
+        <p>{{ request.user.username }} wants to join {{ request.room.name }}</p>
+        <form action="{{ url_for('approve_join', request_id=request.id) }}" method="post">
+            <button type="submit">Approve</button>
+        </form>
+    {% endfor %}
+</body>
+</html>
