@@ -9,8 +9,12 @@ import string
 from flask_bcrypt import Bcrypt
 from Crypto.PublicKey import RSA
 import uuid
+from datetime import datetime,timedelta
+import random 
 from Crypto.Cipher import PKCS1_OAEP
 from engineio.payload import Payload
+from email_sender import send_email
+
 Payload.max_decode_packets = 200
 
 app = Flask(__name__)
@@ -82,6 +86,16 @@ class User(UserMixin, db.Model):
     password = db.Column(db.String(256), nullable=False)
     rooms = db.relationship('ChatRoom', secondary=user_rooms, backref='users')
     profile_pic = db.Column(db.String(255))
+    otp = db.Column(db.String(6), nullable=True)
+    otp_expiration = db.Column(db.DateTime, nullable=True)
+    verified = db.Column(db.Boolean, default=False)
+
+#util function to generate otp
+    def generate_otp(self):
+        self.otp = str(random.randint(100000, 999999))
+        self.otp_expiration = datetime.now() + timedelta(minutes=10)
+
+
 
 def create_id():
     return str(uuid.uuid4())
@@ -125,10 +139,15 @@ def signup():
     # Create a new user and save it to the database
     hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
     default_pic = url_for('upload_avatar',filename='default.png')
-    new_user = User(id = create_id(),username=username, email=email, password=hashed_password,profile_pic=default_pic)
+    new_user = User(id = create_id(),
+                    username=username,
+                    email=email,
+                    password=hashed_password,
+                    profile_pic=default_pic)
+    new_user.generate_otp()
     db.session.add(new_user)
     db.session.commit()
-
+    send_email(new_user.email, new_user.otp)
     return redirect(url_for('verification'))
 
 @app.route("/login", methods=["GET", "POST"])
@@ -141,7 +160,8 @@ def login():
         if not user or not bcrypt.check_password_hash(user.password, password):
             error_message = "Invalid email or password"
             return render_template("auth.html", auth_error=error_message)
-
+        if not user.verified:
+            return render_template("auth.html", auth_error="Please verify your mail first")
         login_user(user)
 
         # If login is successful, then redirect to the chat
@@ -149,13 +169,36 @@ def login():
     else:
         return render_template('auth.html')
     
-@app.route("/verification",methods=["GET","POST"])
+@app.route("/verification", methods=["GET", "POST"])
 def verification():
     if request.method == "POST":
-        print("Hello world")
-        return redirect(url_for('login'))
+        otp = request.form.get("otp")
+        user = User.query.filter_by(otp=otp).first()
+        if user and user.otp_expiration > datetime.now():
+            user.otp = None
+            user.otp_expiration = None
+            user.verified = True
+            db.session.commit()
+            return redirect(url_for('login'))
+        else:
+            message = "Invalid or expired OTP. Please try again or request a new OTP."
+            return render_template('verification.html', auth_error=message)
     else:
         return render_template('verification.html')
+
+@app.route("/resend_otp", methods=["POST"])
+def resend_otp():
+    email = request.form.get("email")
+    user = User.query.filter_by(email=email).first()
+    if user:
+        user.generate_otp()
+        db.session.commit()
+        send_email(user.email, user.otp)
+        message = "A new OTP has been sent to your email."
+        return render_template('verification.html', success_message=message)
+    else:
+        message = "Email address not found."
+        return render_template('verification.html', auth_error=message)
 
 @app.route("/", methods=["GET"])
 def index():
