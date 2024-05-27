@@ -9,3 +9,5 @@ Jinja2
 click
 SQLAlchemy
 Flask-Bcrypt
+pycryptodome
+pycryptodomex
