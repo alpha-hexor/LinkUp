@@ -263,6 +263,24 @@ def approve_join(request_id):
     db.session.commit()
 
     return render_template('chat.html', message="User has been added to the room successfully")
+@app.route("/deny_join/<int:request_id>", methods=["POST"])
+@login_required
+def deny_join(request_id):
+    join_request = JoinRequest.query.get(request_id)
+    if not join_request:
+        return render_template('chat.html', message="Error: join request not found")
+    
+    room = ChatRoom.query.get(join_request.room_id)
+    if room.admin_id != current_user.id:
+        return render_template('chat.html', message="Error: you are not the admin of this room")
+    
+    # Approve the join request
+    user = User.query.get(join_request.user_id)  # Retrieve the requesting user
+    #user.rooms.append(room)  # Add the requesting user to the room
+    db.session.delete(join_request)
+    db.session.commit()
+
+    return render_template('chat.html', message="User request denied")
 @app.route("/view_requests")
 @login_required
 def view_requests():

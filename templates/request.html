@@ -1,16 +1,18 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Join Requests</title>
-</head>
-<body>
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="request-container">
     <h1>Join Requests</h1>
     {% for request in join_requests %}
+    <div class="request-card">
         <p>{{ request.user.username }} wants to join {{ request.room.name }}</p>
-        <form action="{{ url_for('approve_join', request_id=request.id) }}" method="post">
+        <form action="{{ url_for('approve_join', request_id=request.id) }}" method="post" style="display:inline;">
             <button type="submit">Approve</button>
         </form>
+        <form action="{{ url_for('deny_join', request_id=request.id) }}" method="post" style="display:inline;">
+            <button type="submit" class="deny">Deny</button>
+        </form>
+    </div>
     {% endfor %}
-</body>
-</html>
+</div>
+{% endblock %}
