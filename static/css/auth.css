@@ -302,7 +302,7 @@ body {
     transform: translateX(30%);
 }
 
-.hello {}
+/* .hello {} */
 
 .hello h2 {
     color: white;

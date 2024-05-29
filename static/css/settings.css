@@ -5,8 +5,8 @@
     border: 1px solid #ccc;
     border-radius: 8px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    background-color: #ffffff;
   }
-  
   .avatar-container {
     margin-bottom: 20px;
   }
@@ -31,4 +31,10 @@
   #avatar_button:hover {
     background-color: #492192;
   }
+  #main {
+    width: 100vw; /* Full width of the viewport */
+    height: 100vh; /* Full height of the viewport */
+    background-color: #4e5daf;
+    box-sizing: border-box; /* Include padding in height/width calculations */
+}
   

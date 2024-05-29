@@ -1,25 +1,26 @@
 *{ 
-    padding: 0;
-    margin: 0;
-    list-style: none;
-    text-decoration: none;
-    box-sizing: border-box;
-    }  
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  text-decoration: none;
+  box-sizing: border-box;
+  }  
 
-    body{
-      background-color: #efedf3;
-    }
+  body{
+    background-color: #fcfcfc;
+  }
 .head{
-    width: 100%;
-    height: 80px;
-    background: #f6f8fa;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 100px;
-    box-shadow: 0px 3px 8px rgba(0, 0, 0, 25%);
+  width: 100%;
+  height: 80px;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 100px;
+  box-shadow: 0px 3px 8px rgba(0, 0, 0, 25%);
 }
 .navbar ul li a{
+  
     display: block;
     color: rgb(0, 0, 0);
     font-size: 20px;
@@ -224,14 +225,14 @@ input{
 }
 .sentence{
   margin-top: 10px;
-   margin-top: 10px;
-  padding: 28px 38px 44px 22px;
+  margin-top: 10px;
+  padding: 28px 10px;
   text-align: center;
-  color: #817f85;
+  color: #9480bd;
  
 }
 .sentence p{
-  padding: 20px 300px;
+  padding: 15px 30px;
   color: #aca8b3;
   font-family: Arial, Helvetica, sans-serif;
   font-weight: 600;
@@ -335,4 +336,64 @@ input{
   border-radius: 5px;
   align-items: center;
   cursor: pointer;
+}
+/* Default styles */
+#main-part {
+  min-height: 100vh; /* Ensure it takes at least the full viewport height */
+  width: 100%;
+  padding: 20px;
+  margin: 0;
+  background-color: #4e5daf;
+  box-sizing: border-box; /* Include padding in height/width calculations */
+}
+
+.sentence {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.sentence div {
+  margin-bottom: 20px;
+}
+
+h1 {
+  font-size: 2em;
+  margin: 0;
+  color: #edf3f3;
+}
+
+#para {
+  font-size: 1em;
+  color: #007bff;
+}
+#para p{
+  
+  color: #030d47;
+}
+
+/* Responsive styles */
+@media only screen and (max-width: 910px) {
+  h1 {
+      font-size: 100px;
+      padding: 0 10px;
+  }
+
+  #para {
+      font-size: 0.875em; /* Adjust font-size for smaller screens */
+      padding: 0 10px;
+  }
+}
+
+@media only screen and (max-width: 600px) {
+  h1 {
+      font-size: .85em;
+      padding: 0 5px;
+  }
+
+  #para {
+      font-size: 0.7em; /* Further adjust font-size for very small screens */
+      padding: 0 5px;
+  }
 }

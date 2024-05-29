@@ -6,19 +6,23 @@
     padding: 16px;
     box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
     border-radius: 10px;
-    overflow: hidden; /* Hide overflow for chat container */
-    width: 100%; /* Stretch to the maximum width */
+    overflow: hidden; 
+    width: 100%; 
+    
+    
 }
 /* Style the chat messages area, making it scrollable */
 .chat-messages {
-    max-height: 400px; /* Set a maximum height that works for your design */
-    flex: 1;
-    overflow-y: auto; /* Enable vertical scrolling */
+    height: 100vh; /* Full height of the viewport */
+    width: 100vw; /* Full width of the viewport */
+    overflow-y: auto; /*Enable vertical scrolling*/
     padding: 10px;
     border-radius: 10px;
     background-color: #f7f7f7;
-    overflow-x: hidden; /* Hide horizontal overflow */
-    width: 100vw;
+    overflow-x: hidden; 
+    box-sizing: border-box; 
+    margin-bottom: 100px;
+    background-color: #a3d7f0;
 }
 
 
@@ -67,11 +71,14 @@
 
 /* Style the text input field */
 #message-input {
+    background-color: #c6cdd4;
     flex: 1; /* Expand to fill available space */
     border: none;
     border-radius: 20px; /* Rounded text input */
     padding: 8px; /* Add padding to text input */
     margin-right: 10px; /* Add space between input and button */
+    /* z-index: -1; */
+   
 }
 
 /* Style the send button */
@@ -91,8 +98,8 @@
 }
 
 .attachment-button:hover {
-    background-color: #007bff; /* Change background color on hover */
-    transform: scale(1.1); /* Add a slight zoom effect on hover */
+    background-color: #007bff; 
+    transform: scale(1.1); 
 }
 .tooltip {
     display: none;
@@ -151,4 +158,64 @@
     font-size: 30px;
     color: #fff;
     cursor: pointer;
+}
+.call img{
+    height: 2.5em;
+    width: 2.5em;
+    padding: 2px;
+    
+}
+
+/* Msg-input container styles */
+.msg-input {
+    display: flex;
+    align-items: center;
+    gap: 10px; /* Space between elements */
+    padding: 10px;
+    background-color: #e0e0e0;
+    box-sizing: border-box;
+    flex-wrap: wrap; /* Allow wrapping */
+}
+
+/* Element styles inside msg-input */
+.msg-input .attachment,
+.msg-input .mic,
+.msg-input .call,
+#send-button {
+    flex-shrink: 0;
+}
+
+.msg-input input[type="text"] {
+    flex: 1;
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+}
+
+#file-limit-message,
+#attachment-tooltip {
+    display: none;
+}
+
+/* Responsive styles for stacking only the send button below */
+@media only screen and (max-width: 450px) {
+    .msg-input {
+        justify-content: space-between;
+    }
+    
+    .msg-input input[type="text"] {
+        flex: none;
+        width: 100%; /* Full width */
+        margin-bottom: 10px; /* Space below the input */
+    }
+    .msg-input .mic,
+    .msg-input .call {
+        order: 1; /* Ensure they stay in the same line */
+        flex: 1;
+    }
+    #send-button {
+        order: 2; /* Move send button below */
+        width: 100%; /* Full width */
+        margin-top: 10px; /* Space above the send button */
+    }
 }

@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 
 {% block content %}
+<section id="main">
   <div class="profile-container">
     <p>
       <h5>Welcome {{ current_user.username }} </h5>
@@ -14,4 +15,5 @@
       <button type="submit" id = "avatar_button">Change Avatar</button>
     </form>
   </div>
+  </section>
 {% endblock %}

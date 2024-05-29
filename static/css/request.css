@@ -16,14 +16,15 @@ main {
   }
   
   .request-container {
+    width: 100vw; /* Full width of the viewport */
+    height: 100vh; /* Full height of the viewport */
     text-align: center;
     border: 2px solid black;
-    height: 100%;
     font-family: Arial, sans-serif;
     background-color: #4e5daf;
-    
-    margin: 1em;
-  }
+    margin: 0; /* Remove default margin */
+    box-sizing: border-box; /* Include border and padding in height/width calculations */
+}
   
   .request-card {
     background-color: #fff;
@@ -65,3 +66,5 @@ main {
   .request-card button:hover {
     opacity: 0.9;
   }
+
+ 
