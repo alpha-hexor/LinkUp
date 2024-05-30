@@ -52,18 +52,7 @@
 }
 
 /* Style the chat input area */
-.msg-input {
-    display: flex;
-    align-items: center;
-    background-color: #fff; /* Background color for input area */
-    padding: 10px; /* Add padding to the input area */
-    border-radius: 10px; /* Rounded corners for input area */
-    position: fixed; /* Fixed position at the bottom */
-    bottom: 0; /* Stick to the bottom */
-    left: 0;
-    right: 0;
-}
-
+/* 
 .attachment{
     flex: 0 0 auto;
     margin-right: 10px;
@@ -198,24 +187,47 @@
 }
 
 /* Responsive styles for stacking only the send button below */
-@media only screen and (max-width: 450px) {
+@media only screen and (max-width: 490px) {
     .msg-input {
-        justify-content: space-between;
+        flex-direction: row; /* Keep elements in the same row */
+        align-items: center; /* Align items horizontally */
+        gap: 5px; /* Decrease space between elements */
+        padding: 5px 0; /* Adjust vertical padding */
+        overflow-x: auto; /* Enable horizontal scrolling if necessary */
     }
-    
+
     .msg-input input[type="text"] {
-        flex: none;
-        width: 100%; /* Full width */
-        margin-bottom: 10px; /* Space below the input */
+        flex-grow: 1; /* Allow input to grow and fill remaining space */
+        padding: 10px; /* Adjust input padding */
+        margin-right: 3px; /* Decrease space between input and buttons */
     }
-    .msg-input .mic,
+
+    .msg-input .mic {
+        flex-grow: 0; /* Prevent icons from growing */
+        flex-shrink: 0; /* Prevent icons from shrinking */
+        width: 25px; /* Adjust button width */
+        height: 25px; /* Adjust button height */
+        display: flex; /* Ensure flexbox is used */
+        justify-content: center; /* Center content horizontally */
+        align-items: center; /* Center content vertically */
+    }
+
     .msg-input .call {
-        order: 1; /* Ensure they stay in the same line */
-        flex: 1;
+        flex-grow: 0; /* Prevent icons from growing */
+        flex-shrink: 0; /* Prevent icons from shrinking */
+        width: 15px; /* Adjust button width */
+        height: 25px;
+        justify-content: center;
+        align-items: center;
+        margin-left: 0px; /* Space between mic and call button */
     }
+
     #send-button {
-        order: 2; /* Move send button below */
-        width: 100%; /* Full width */
-        margin-top: 10px; /* Space above the send button */
+        width: 100%; /* Adjust send button width */
+        padding: 10px;
+        text-align: center; /* Center the text horizontally */
+        display: flex; /* Use flexbox to center text */
+        justify-content: center; /* Center horizontally */
+        align-items: center; /* Center vertically */
     }
 }

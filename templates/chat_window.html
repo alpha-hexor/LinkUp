@@ -65,36 +65,35 @@
         </div>
         {% endfor %}
     </div>
-    
-    <div class="msg-input">
-        <div class="attachment">
-            <button id="file-button" class="attachment-button" onmouseover="showTooltip()" onmouseout="hideTooltip()">
-                <img src="{{ url_for('static', filename='images/file_button.png') }}" alt="Attach File">
-            </button>
-            <input type="file" id="file-input" style="display: none;" multiple>
-            <p id="file-limit-message" style="color: red;"></p>
-            <div id="attachment-tooltip" class="tooltip">
-                <p>You can select up to 8 files (total size up to 32 MB).</p>
-            </div>
-
-        </div>
-
-        <input type="text" id="message-input" placeholder="Type your message...">
-        <div class="mic">
-            <button id="voice-recorder">
-                <img src="{{ url_for('static', filename='images/voice.png') }}" alt="Voice Message">
-            </button>
-        </div>
-        <div class="call">
-            <a href ="/video_room" target="_blank">
-                <button id="startcall">
-                    <img src="{{ url_for('static', filename= 'images/call.png') }}" alt="video calll">
-                </button>
-            </a>
-        </div>
-        <button id="send-button">Send</button>
-    </div> 
 </div>
+    
+<div class="msg-input">
+    <div class="attachment">
+        <button id="file-button" class="attachment-button" onmouseover="showTooltip()" onmouseout="hideTooltip()">
+            <img src="{{ url_for('static', filename='images/file_button.png') }}" alt="Attach File">
+        </button>
+        <input type="file" id="file-input" style="display: none;" multiple>
+        <p id="file-limit-message" style="color: red;"></p>
+        <div id="attachment-tooltip" class="tooltip">
+            <p>You can select up to 8 files (total size up to 32 MB).</p>
+        </div>
+    </div>
+    <input type="text" id="message-input" placeholder="Type your message...">
+    <div class="mic">
+        <button id="voice-recorder">
+            <img src="{{ url_for('static', filename='images/voice.png') }}" alt="Voice Message">
+        </button>
+    </div>
+    <div class="call">
+        <a href ="/video_room" target="_blank">
+            <button id="startcall">
+                <img src="{{ url_for('static', filename= 'images/call.png') }}" alt="video calll">
+            </button>
+        </a>
+    </div>
+    <button id="send-button">Send</button>
+</div> 
+
 <div id="profileModal" class="modal">
     <span class="close" onclick="closeProfileModal()">&times;</span>
     <img class="modal-content" id="profileModalImg">
