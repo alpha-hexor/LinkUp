@@ -1,0 +1,4 @@
+avatars/*
+attachments/*
+*.json
+*.db
