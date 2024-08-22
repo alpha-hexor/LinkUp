@@ -1,0 +1,58 @@
+body {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    margin: 0;
+}
+
+.message-container {
+    margin-top: auto;
+    padding: 10px;
+    background: #f0f0f0;
+    border-top: 1px solid #ccc;
+    display: flex;
+    align-items: center;
+    background-color: rgb(53, 52, 56);
+}
+
+.message-input {
+    width: calc(100% - 50px);
+    padding: 10px;
+    box-sizing: border-box;
+    border-radius: 15px;
+    background-color: rgb(37, 33, 33);
+    color: white;
+}
+
+.send-button {
+    width: 20px;
+    height: 20px;
+    color: white;
+    border: none;
+    border-radius: 2px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.3s, transform 0.2s;
+    margin: 20px;
+    background-color: rgb(53, 52, 56);
+    color: #e1e2eb;
+}
+.send-button i {
+    font-size: 18px;
+}
+
+.send-button:hover {
+    transform: scale(1.1);
+    color: white;
+}
+
+.material-symbols-outlined {
+  font-variation-settings:
+  'FILL' 0,
+  'wght' 400,
+  'GRAD' 0,
+  'opsz' 40
+}
+

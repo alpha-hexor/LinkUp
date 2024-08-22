@@ -1,0 +1,49 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Message Page</title>
+    <link rel="stylesheet" href="../static/css/ai_page.css" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+</head>
+<style>
+    {% comment %} body {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        margin: 0;
+    }
+    .message-container {
+        margin-top: auto;
+        padding: 10px;
+        background: #f0f0f0;
+        border-top: 1px solid #ccc;
+    }
+    .message-input {
+        width: calc(100% - 90px);
+        padding: 10px;
+        box-sizing: border-box;
+    }
+    .send-button {
+        width: 80px;
+        padding: 10px;
+    } {% endcomment %}
+</style>
+<body>
+    <div class="message-container">
+        <input type="text" class="message-input" placeholder="Type your message...">
+        <button class="send-button" id="send">
+            <span class="material-symbols-outlined">
+                send
+                </span>
+        </button>
+    </div>
+    <script>
+        document.getElementById("send").onclick = function() {
+            console.log("I got clicked");
+        }
+    </script> 
+</body>
+</html>
