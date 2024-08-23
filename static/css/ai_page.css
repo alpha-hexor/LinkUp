@@ -5,7 +5,7 @@ body {
     margin: 0;
 }
 
-.message-container {
+.ai-message-container {
     margin-top: auto;
     padding: 10px;
     background: #f0f0f0;
@@ -15,7 +15,7 @@ body {
     background-color: rgb(53, 52, 56);
 }
 
-.message-input {
+.ai-message-input {
     width: calc(100% - 50px);
     padding: 10px;
     box-sizing: border-box;
@@ -24,7 +24,7 @@ body {
     color: white;
 }
 
-.send-button {
+.ai-send-button {
     width: 20px;
     height: 20px;
     color: white;
@@ -39,11 +39,11 @@ body {
     background-color: rgb(53, 52, 56);
     color: #e1e2eb;
 }
-.send-button i {
+.ai-send-button i {
     font-size: 18px;
 }
 
-.send-button:hover {
+.ai-send-button:hover {
     transform: scale(1.1);
     color: white;
 }

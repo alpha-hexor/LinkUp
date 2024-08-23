@@ -14,6 +14,9 @@ import random
 from Crypto.Cipher import PKCS1_OAEP
 from engineio.payload import Payload
 from email_sender import send_email
+import eventlet
+import requests
+import json
 
 Payload.max_decode_packets = 200
 
@@ -33,8 +36,9 @@ app.config['AVATARS_FOLDER'] = 'avatars' #for avatar stuff
 # app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
+eventlet.monkey_patch()
 
-socketio = SocketIO(app, logger=True, engineio_logger=True,max_http_buffer_size=40 * 1024 * 1024)
+socketio = SocketIO(app, logger=True, engineio_logger=True,max_http_buffer_size=40 * 1024 * 1024,async_mode='eventlet',cors_allowed_origins="*")
 
 app.static_folder = 'static'
 
@@ -67,6 +71,20 @@ class ChatRoom(db.Model):
     messages = db.relationship('ChatMessage', backref='room')
     admin_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
+# ai tables
+class AIChatRoom(db.Model):
+    id = db.Column(db.String(80), primary_key=True)
+    user_id = db.Column(db.String(80), db.ForeignKey('user.id'), unique=True, nullable=False)
+    user = db.relationship('User', back_populates='ai_chatroom')
+    messages = db.relationship('AIChatMessage', backref='room', cascade='all, delete-orphan')
+
+class AIChatMessage(db.Model):
+    id = db.Column(db.String(80), primary_key=True)
+    content = db.Column(db.String(50000))
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    room_id = db.Column(db.String(80), db.ForeignKey('ai_chat_room.id'))
+
+
 class JoinRequest(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
@@ -89,6 +107,7 @@ class User(UserMixin, db.Model):
     otp = db.Column(db.String(6), nullable=True)
     otp_expiration = db.Column(db.DateTime, nullable=True)
     verified = db.Column(db.Boolean, default=False)
+    ai_chatroom = db.relationship('AIChatRoom', uselist=False, back_populates='user')
 
 #util function to generate otp
     def generate_otp(self):
@@ -108,6 +127,31 @@ def load_user(user_id):
 def create_db():
     with app.app_context():
         db.create_all()
+
+def stream_api_response(prompt, sid, user_id):
+    model = "gemma2:2b"
+    response = requests.post(
+        'http://127.0.0.1:11434/api/generate',
+        json={"model": model, "prompt": prompt},
+        stream=True
+    )
+    print(sid)
+    complete_response = ""
+    for line in response.iter_lines():
+        data = line.decode("utf-8")
+        data = json.loads(data)["response"]
+        #complete_response += data
+        
+        # Emit data to the specific client session
+        socketio.emit('ai_response_data', {'data': data}, to=sid)
+    
+    # Store the complete response in the database after the stream ends
+    new_message = AIChatMessage(
+        content=complete_response,
+        room_id=AIChatRoom.query.filter_by(user_id=user_id).first().id
+    )
+    db.session.add(new_message)
+    db.session.commit()
 
 # Define a route for serving uploaded files
 @app.route('/avatars/<filename>')
@@ -147,6 +191,16 @@ def signup():
     new_user.generate_otp()
     db.session.add(new_user)
     db.session.commit()
+
+    #creat a ai room for the user
+    ai_chatroom = AIChatRoom(
+        id = create_id(),
+        user_id = new_user.id
+    )
+
+    db.session.add(ai_chatroom)
+    db.session.commit()
+
     send_email(new_user.email, new_user.otp)
     return redirect(url_for('verification'))
 
@@ -423,6 +477,25 @@ def entry_checkpoint(room_id):
 
     return render_template("chatroom_checkpoint.html", room_id=room_id)
 
+#ai pages
+@app.route("/ai_room/<string:room_id>")
+@login_required
+def ai_room(room_id):
+    #validate the user
+    room = AIChatRoom.query.get(room_id)
+    #print(room.user)
+    if current_user.id == room.user.id:
+        return render_template("ai-page.html",room=room)
+    else:
+        return render_template('403.html')
+#get the username
+@app.route("/ai_active_users/<string:room_id>")
+@login_required
+def get_ai_username(room_id:str):
+    room = AIChatRoom.query.get(room_id)
+    active_user = room.user
+    return jsonify([{"id": active_user.id, "username": active_user.username}])
+
 
 @app.route("/logout", methods=["GET"])
 @login_required
@@ -630,6 +703,17 @@ def on_data(data):
     if data["type"] != "new-ice-candidate":
         print('{} message from {} to {}'.format(data["type"], sender_sid, target_sid))
     socketio.emit('data', data, room=target_sid)
+
+#ai socketio
+@socketio.on('start_ai_stream')
+def handle_ai_stream(data):
+    prompt = data.get('prompt') + " Keep the answer very short and concise. Not more than 300 words."
+
+    # Get the client's session ID
+    sid = request.sid
+
+    # Start the streaming in the background, passing the session ID
+    socketio.start_background_task(stream_api_response, prompt, sid, current_user.id)
 
 if __name__ == '__main__':
     create_db()

@@ -1,49 +1,117 @@
+<!-- index.html -->
+{% extends 'base.html' %}
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Message Page</title>
-    <link rel="stylesheet" href="../static/css/ai_page.css" />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
-</head>
-<style>
-    {% comment %} body {
-        display: flex;
-        flex-direction: column;
-        height: 100vh;
-        margin: 0;
-    }
-    .message-container {
-        margin-top: auto;
-        padding: 10px;
-        background: #f0f0f0;
-        border-top: 1px solid #ccc;
-    }
-    .message-input {
-        width: calc(100% - 90px);
-        padding: 10px;
-        box-sizing: border-box;
-    }
-    .send-button {
-        width: 80px;
-        padding: 10px;
-    } {% endcomment %}
-</style>
-<body>
-    <div class="message-container">
-        <input type="text" class="message-input" placeholder="Type your message...">
-        <button class="send-button" id="send">
+{% block content %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/ai_page.css') }}" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+
+    <div id="room-data" data-room-id="{{ room.id }}"></div>
+    <div class="d-flex justify-content-between">
+        <ul class="nav">
+            <li class="nav-item">
+                <button class="btn btn-primary" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasScrolling" aria-controls="offcanvasScrolling">
+                    <img src="{{ url_for('static', filename='images/menu.png') }}" alt="show users">
+                </button>
+                <div class="offcanvas offcanvas-start" data-bs-scroll="true" data-bs-backdrop="false" tabindex="-1" id="offcanvasScrolling" aria-labelledby="offcanvasScrollingLabel">
+                    <div class="offcanvas-header">
+                      <h5 class="offcanvas-title" id="offcanvasScrollingLabel">List of Users</h5>
+                      <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                    </div>
+                    <div class="offcanvas-body" id="usersList"></div>
+                </div>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link active" aria-current="page">AI Room</a>
+            </li>
+        </ul>
+    </div>
+    <div id="chat-container"></div>
+    <div class="ai-message-container">
+        <input type="text" class="ai-message-input" id="ai-input" placeholder="Type your message...">
+        <button class="ai-send-button" id="send">
             <span class="material-symbols-outlined">
                 send
-                </span>
+            </span>
         </button>
     </div>
+
     <script>
+
+        var socket = io();
+        const room_id = "{{room.id}}";
+        let responseCounter = 0;
         document.getElementById("send").onclick = function() {
-            console.log("I got clicked");
+            const prompt = document.querySelector("#ai-input").value;
+            const chatContainer = document.getElementById("chat-container");
+
+            // Add the user's question to the chat container
+            const userQuestion = document.createElement("div");
+            userQuestion.className = "user-question";
+            userQuestion.textContent = "You: " + prompt;
+            chatContainer.appendChild(userQuestion);
+
+            // Clear the input field
+            document.querySelector("#ai-input").value = "";
+            responseCounter++;
+
+            // Emit the prompt to the server
+            socket.emit('start_ai_stream', {'prompt': prompt});
         }
+
+        socket.on('ai_response_data', function(data) {
+            // Convert Markdown to HTML and inject into md-block  
+            var markdown = data.data;
+            console.log(markdown)
+            if (markdown === "\n" || markdown === "\n\n") {
+                markdown = "<br>";
+            } 
+            const chatContainer = document.getElementById("chat-container");
+
+            // Check if we already have an AI response container
+            let aiResponse = document.getElementById(`ai-response-${responseCounter}`);
+
+
+            if (!aiResponse) {
+                // Create a new container for the AI response
+                aiResponse = document.createElement("div");
+                aiResponse.id = `ai-response-${responseCounter}`;
+                aiResponse.className =`ai-response-${responseCounter}`;
+                chatContainer.appendChild(aiResponse);
+            }
+
+            // Append the incoming data to the AI response container
+            aiResponse.innerHTML += markdown;
+
+            // Ensure the latest message is visible
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        });        
+        document.querySelector('#offcanvasScrolling').addEventListener('show.bs.offcanvas', function () {
+            fetch('/ai_active_users/'+room_id) 
+                .then(response => response.json())
+                .then(data => {
+                    const usersList = document.querySelector('#usersList');
+                    usersList.innerHTML = '';  // Clear any existing content
+
+                    if (data.length > 0) {
+                        const userListContainer = document.createElement('ul');
+                        userListContainer.className = 'list-group';
+
+                        data.forEach(user => {
+                            const userItem = document.createElement('li');
+                            userItem.className = 'list-group-item';
+                            userItem.textContent = user.username;
+
+                            userListContainer.appendChild(userItem);
+                        });
+
+                        usersList.appendChild(userListContainer);
+                    } else {
+                        usersList.textContent = 'No active users in this chatroom.';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching user data:', error);
+                });
+        });
     </script> 
-</body>
-</html>
+{% endblock %}
