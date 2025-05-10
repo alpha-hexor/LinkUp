@@ -11,3 +11,4 @@ SQLAlchemy
 Flask-Bcrypt
 pycryptodome
 pycryptodomex
+requests
